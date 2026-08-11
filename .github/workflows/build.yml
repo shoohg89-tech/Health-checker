@@ -23,19 +23,16 @@ jobs:
 
     - name: 앱 코드 자동 생성 (V3.0 폰+워치 동시 빌드)
       run: |
-        # 폰 앱 폴더 생성
+        # 폴더 뼈대 생성
         mkdir -p app/src/main/java/com/samsung/healthchecker
         mkdir -p app/src/main/res/layout
-        mkdir -p app/src/main/res/values
-
-        # 워치 앱 폴더 생성
         mkdir -p wear/src/main/java/com/samsung/healthchecker/wear
         mkdir -p wear/src/main/res/layout
 
-        # --- 1. 최상위 설정 파일들 ---
+        # 1. 고정 서명키 (무한 업데이트)
         keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
         
-        echo "android.useAndroidX=true\nandroid.enableJetifier=true" > gradle.properties
+        echo -e "android.useAndroidX=true\nandroid.enableJetifier=true" > gradle.properties
 
         cat << 'EOF' > settings.gradle
         pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
@@ -48,37 +45,27 @@ jobs:
         cat << 'EOF' > build.gradle
         plugins {
             id 'com.android.application' version '8.1.1' apply false
-            id 'com.android.wear.application' version '8.1.1' apply false
             id 'org.jetbrains.kotlin.android' version '1.9.0' apply false
         }
         EOF
 
-        # --- 2. 폰 앱 (app) 코드 ---
+        # 2. 폰 앱 (app) 환경설정
         cat << 'EOF' > app/build.gradle
         plugins { id 'com.android.application'; id 'org.jetbrains.kotlin.android' }
         android {
             namespace 'com.samsung.healthchecker'
             compileSdk 34
             defaultConfig { applicationId "com.samsung.healthchecker"; minSdk 24; targetSdk 34; versionCode 4; versionName "3.0" }
-            signingConfigs {
-                debugKeystore { storeFile file("../debug.keystore"); storePassword "android"; keyAlias "androiddebugkey"; keyPassword "android" }
-            }
-            buildTypes {
-                debug { signingConfig signingConfigs.debugKeystore }
-            }
+            signingConfigs { debugKeystore { storeFile file("../debug.keystore"); storePassword "android"; keyAlias "androiddebugkey"; keyPassword "android" } }
+            buildTypes { debug { signingConfig signingConfigs.debugKeystore } }
             compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
             kotlinOptions { jvmTarget = '17' }
         }
         dependencies {
             implementation 'androidx.appcompat:appcompat:1.6.1'
             implementation 'com.google.android.material:material:1.9.0'
-            // ADB 통신을 위한 라이브러리 추가!
-            implementation 'com.github.vidhuc.local-adb-android:local-adb-lib:0.3'
-            wearApp project(":wear")
         }
         EOF
-
-        cp app/build.gradle app/build.gradle.kts_backup # workaround for a known issue
 
         cat << 'EOF' > app/src/main/AndroidManifest.xml
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -94,54 +81,61 @@ jobs:
             </application>
         </manifest>
         EOF
+
+        cat << 'EOF' > app/src/main/res/layout/activity_main.xml
+        <?xml version="1.0" encoding="utf-8"?>
+        <ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#F4F7F9">
+            <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="16dp">
+                <TextView android:text="⚙️ Health 검증 도우미 v3.0" android:textSize="22sp" android:textStyle="bold" android:textColor="#0054A6" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp" android:gravity="center"/>
+                
+                <LinearLayout android:orientation="vertical" android:background="#FFFFFF" android:elevation="4dp" android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp">
+                    <TextView android:text="📱 내 폰 정보" android:textSize="18sp" android:textStyle="bold" android:textColor="#0054A6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="8dp"/>
+                    <TextView android:id="@+id/tv_phone_info" android:text="불러오는 중..." android:textColor="#333333" android:textSize="14sp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                </LinearLayout>
+                
+                <LinearLayout android:orientation="vertical" android:background="#FFFFFF" android:elevation="4dp" android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp">
+                    <TextView android:text="🔍 실시간 자동 검증 결과" android:textSize="18sp" android:textStyle="bold" android:textColor="#0054A6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="8dp"/>
+                    <TextView android:id="@+id/tv_sys_perm" android:text="1. 시스템 위치 권한 : ⏳ 대기중" android:textSize="15sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="6dp"/>
+                    <TextView android:id="@+id/tv_sh_perm" android:text="2. 헬스 설정 위치 정보 : ⏳ 대기중" android:textSize="15sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="16dp"/>
+                    <TextView android:id="@+id/tv_final_status" android:text="📢 상태 분석중..." android:textSize="18sp" android:textStyle="bold" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="12dp" android:gravity="center" android:padding="8dp"/>
+                    <Button android:id="@+id/btn_health_settings" android:text="📍 헬스 '위치 정보' 토글 확인하기 ↗" android:backgroundTint="#0054A6" android:textColor="#FFFFFF" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                </LinearLayout>
+                
+                <LinearLayout android:orientation="vertical" android:background="#FFFFFF" android:elevation="4dp" android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+                    <TextView android:text="⌚ 워치 무선 세팅 (V3.0)" android:textSize="18sp" android:textStyle="bold" android:textColor="#0054A6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="8dp"/>
+                    <EditText android:id="@+id/et_ip" android:hint="IP:포트 입력 (예: 192.168.0.15:5555)" android:inputType="textUri" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="8dp"/>
+                    <Button android:id="@+id/btn_adb_install" android:text="📡 워치 통신 엔진 테스트" android:backgroundTint="#0054A6" android:textColor="#FFFFFF" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+        EOF
+
+        cat << 'EOF' > app/src/main/java/com/samsung/healthchecker/MainActivity.kt
+        package com.samsung.healthchecker
+        import android.Manifest
+        import android.content.Intent
+        import android.content.pm.PackageManager
+        import android.graphics.Color
+        import android.net.Uri
+        import android.os.Build
+        import android.os.Bundle
+        import android.provider.Settings
+        import android.widget.Button
+        import android.widget.EditText
+        import android.widget.TextView
+        import android.widget.Toast
+        import androidx.appcompat.app.AppCompatActivity
         
-        # (레이아웃 XML 과 폰 앱 동작 코드는 이전과 동일하게 유지, ADB 로직 추가)
-        # ... (이전 V2.2 코드의 레이아웃, 동작 코드 부분이 여기에 들어감) ...
-        # (생략 - 실제로는 전체 코드가 들어감)
-
-        # --- 3. 워치 앱 (wear) 코드 ---
-        cat << 'EOF' > wear/build.gradle
-        plugins { id 'com.android.wear.application'; id 'org.jetbrains.kotlin.android' }
-        android {
-            namespace 'com.samsung.healthchecker.wear'
-            compileSdk 33
-            defaultConfig { applicationId "com.samsung.healthchecker.wear"; minSdk 28; targetSdk 33; versionCode 1; versionName "1.0" }
-            compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
-            kotlinOptions { jvmTarget = '17' }
-        }
-        dependencies {
-            implementation 'androidx.core:core-ktx:1.9.0'
-            implementation 'com.google.android.gms:play-services-wearable:18.1.0'
-        }
-        EOF
-
-        cat << 'EOF' > wear/src/main/AndroidManifest.xml
-        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-            <uses-feature android:name="android.hardware.type.watch" />
-            <application android:label="Health 검증 도우미(워치)">
-                 <meta-data android:name="com.google.android.wearable.standalone" android:value="false" />
-            </application>
-        </manifest>
-        EOF
-
-        cat << 'EOF' > wear/src/main/java/com/samsung/healthchecker/wear/MainActivity.kt
-        package com.samsung.healthchecker.wear
-        // 워치 앱은 현재 아무 기능 없이 껍데기만 있어도 됨
-        class MainActivity {}
-        EOF
-
-    - name: APK 앱 굽기 (폰 + 워치)
-      run: |
-        # 워치 앱 먼저 빌드
-        ./gradlew :wear:assembleDebug
-        # 폰 앱 빌드
-        ./gradlew :app:assembleDebug
-
-    - name: 구워진 앱들 추출하기
-      uses: actions/upload-artifact@v4
-      with:
-        name: HealthChecker-App-V3-Phone-And-Watch
-        path: |
-          app/build/outputs/apk/debug/app-debug.apk
-          wear/build/outputs/apk/debug/wear-debug.apk
-
+        class MainActivity : AppCompatActivity() {
+            override fun onCreate(savedInstanceState: Bundle?) {
+                super.onCreate(savedInstanceState)
+                setContentView(R.layout.activity_main)
+                
+                findViewById<Button>(R.id.btn_health_settings).setOnClickListener {
+                    try {
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("shealth://settings")))
+                    } catch (e: Exception) {
+                        startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply { data = Uri.parse("package:com.sec.android.app.shealth") })
+                        Toast.makeText(this, "설정 화면으로 이동합니다.", Toast.LENGTH_SHORT).show()
+                    }
+          
