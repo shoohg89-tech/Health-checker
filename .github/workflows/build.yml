@@ -24,7 +24,7 @@ jobs:
       run: |
         mkdir -p app/src/main/java/com/samsung/healthchecker
         
-        # 1. 설정 파일 생성 (AndroidX 활성화 추가!)
+        # 1. 설정 파일 생성 (AndroidX 활성화)
         cat << 'EOF' > gradle.properties
         android.useAndroidX=true
         android.enableJetifier=true
@@ -55,19 +55,28 @@ jobs:
             namespace 'com.samsung.healthchecker'
             compileSdk 34
             defaultConfig { applicationId "com.samsung.healthchecker"; minSdk 24; targetSdk 34; versionCode 1; versionName "1.0" }
+            
+            # 자바 빌드 버전을 17로 완벽하게 고정시키는 옵션 (에러 해결 핵심!)
+            compileOptions {
+                sourceCompatibility JavaVersion.VERSION_17
+                targetCompatibility JavaVersion.VERSION_17
+            }
+            kotlinOptions {
+                jvmTarget = '17'
+            }
         }
         dependencies {
             implementation 'androidx.appcompat:appcompat:1.6.1'
         }
         EOF
         
-        # 2. 안드로이드 시스템 권한 파일 생성
+        # 2. 안드로이드 시스템 권한 파일 생성 (에러가 제안한 대로 패키지 중복 제거 반영)
         cat << 'EOF' > app/src/main/AndroidManifest.xml
         <?xml version="1.0" encoding="utf-8"?>
-        <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.samsung.healthchecker">
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
             <queries><package android:name="com.sec.android.app.shealth" /></queries>
             <application android:label="Health 검증앱" android:theme="@style/Theme.AppCompat.Light.NoActionBar">
-                <activity android:name=".MainActivity" android:exported="true">
+                <activity android:name="com.samsung.healthchecker.MainActivity" android:exported="true">
                     <intent-filter>
                         <action android:name="android.intent.action.MAIN" />
                         <category android:name="android.intent.category.LAUNCHER" />
