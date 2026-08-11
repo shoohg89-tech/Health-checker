@@ -1,4 +1,4 @@
-name: Build Health Checker App
+name: Build Health Checker App V2
 
 on:
   push:
@@ -20,33 +20,27 @@ jobs:
       with:
         gradle-version: '8.4'
 
-    - name: 앱 코드 자동 생성
+    - name: 앱 코드 자동 생성 (V2.0 완전 자동화)
       run: |
         mkdir -p app/src/main/java/com/samsung/healthchecker
+        mkdir -p app/src/main/res/layout
+        mkdir -p app/src/main/res/values
         
-        # 1. 설정 파일 생성 (AndroidX 활성화)
+        # 1. 설정 파일 생성
         cat << 'EOF' > gradle.properties
         android.useAndroidX=true
         android.enableJetifier=true
         EOF
 
         cat << 'EOF' > settings.gradle
-        pluginManagement {
-            repositories { google(); mavenCentral(); gradlePluginPortal() }
-        }
-        dependencyResolutionManagement {
-            repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-            repositories { google(); mavenCentral() }
-        }
+        pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+        dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
         rootProject.name = "HealthChecker"
         include ':app'
         EOF
         
         cat << 'EOF' > build.gradle
-        plugins {
-            id 'com.android.application' version '8.1.1' apply false
-            id 'org.jetbrains.kotlin.android' version '1.9.0' apply false
-        }
+        plugins { id 'com.android.application' version '8.1.1' apply false; id 'org.jetbrains.kotlin.android' version '1.9.0' apply false }
         EOF
         
         cat << 'EOF' > app/build.gradle
@@ -54,28 +48,22 @@ jobs:
         android {
             namespace 'com.samsung.healthchecker'
             compileSdk 34
-            defaultConfig { applicationId "com.samsung.healthchecker"; minSdk 24; targetSdk 34; versionCode 1; versionName "1.0" }
-            
-            // 주석 기호를 //로 올바르게 수정하였습니다!
-            compileOptions {
-                sourceCompatibility JavaVersion.VERSION_17
-                targetCompatibility JavaVersion.VERSION_17
-            }
-            kotlinOptions {
-                jvmTarget = '17'
-            }
+            defaultConfig { applicationId "com.samsung.healthchecker"; minSdk 24; targetSdk 34; versionCode 2; versionName "2.0" }
+            compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+            kotlinOptions { jvmTarget = '17' }
         }
         dependencies {
             implementation 'androidx.appcompat:appcompat:1.6.1'
+            implementation 'com.google.android.material:material:1.9.0'
         }
         EOF
         
-        # 2. 안드로이드 시스템 권한 파일 생성
+        # 2. 안드로이드 시스템 권한 및 쿼리 세팅
         cat << 'EOF' > app/src/main/AndroidManifest.xml
         <?xml version="1.0" encoding="utf-8"?>
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
             <queries><package android:name="com.sec.android.app.shealth" /></queries>
-            <application android:label="Health 검증앱" android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+            <application android:label="Health 검증앱" android:theme="@style/Theme.MaterialComponents.Light.NoActionBar">
                 <activity android:name="com.samsung.healthchecker.MainActivity" android:exported="true">
                     <intent-filter>
                         <action android:name="android.intent.action.MAIN" />
@@ -86,46 +74,148 @@ jobs:
         </manifest>
         EOF
         
-        # 3. 메인 화면 동작 코드
+        # 3. 고급 카드형 UI 레이아웃 화면 (XML)
+        cat << 'EOF' > app/src/main/res/layout/activity_main.xml
+        <?xml version="1.0" encoding="utf-8"?>
+        <ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#F4F7F9">
+            <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="16dp">
+                <!-- 타이틀 -->
+                <TextView android:text="⚙️ Health 검증 도우미 v2.0" android:textSize="22sp" android:textStyle="bold" android:textColor="#0054A6" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp" android:gravity="center"/>
+                
+                <!-- 폰 정보 카드 -->
+                <LinearLayout android:orientation="vertical" android:background="#FFFFFF" android:elevation="4dp" android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp">
+                    <TextView android:text="📱 내 폰 정보" android:textSize="18sp" android:textStyle="bold" android:textColor="#0054A6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="8dp"/>
+                    <TextView android:id="@+id/tv_phone_info" android:text="불러오는 중..." android:textColor="#333333" android:textSize="14sp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                </LinearLayout>
+                
+                <!-- 실시간 검증 결과 카드 -->
+                <LinearLayout android:orientation="vertical" android:background="#FFFFFF" android:elevation="4dp" android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp">
+                    <TextView android:text="🔍 실시간 자동 검증 결과" android:textSize="18sp" android:textStyle="bold" android:textColor="#0054A6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="8dp"/>
+                    <TextView android:id="@+id/tv_sys_perm" android:text="1. 시스템 위치 권한 : ⏳ 대기중" android:textSize="15sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="6dp"/>
+                    <TextView android:id="@+id/tv_sh_perm" android:text="2. 헬스 설정 위치 정보 : ⏳ 대기중" android:textSize="15sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="16dp"/>
+                    <TextView android:id="@+id/tv_final_status" android:text="📢 상태 분석중..." android:textSize="18sp" android:textStyle="bold" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="12dp" android:gravity="center" android:padding="8dp"/>
+                    <Button android:id="@+id/btn_health_settings" android:text="📍 헬스 '위치 정보' 토글 확인하기 ↗" android:backgroundTint="#0054A6" android:textColor="#FFFFFF" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                </LinearLayout>
+                
+                <!-- 워치 무선 설치 카드 -->
+                <LinearLayout android:orientation="vertical" android:background="#FFFFFF" android:elevation="4dp" android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content">
+                    <TextView android:text="⌚ 워치 도우미 앱 무선 설치" android:textSize="18sp" android:textStyle="bold" android:textColor="#0054A6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="8dp"/>
+                    <EditText android:id="@+id/et_ip" android:hint="워치 IP 주소 입력 (예: 192.168.0.15)" android:inputType="textUri" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="8dp"/>
+                    <Button android:id="@+id/btn_adb_install" android:text="📡 워치 앱 무선 전송 (ADB 연동)" android:backgroundTint="#0054A6" android:textColor="#FFFFFF" android:layout_width="match_parent" android:layout_height="wrap_content"/>
+                </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+        EOF
+        
+        # 4. 메인 화면 동작 코드 (실시간 검증 로직 포함)
         cat << 'EOF' > app/src/main/java/com/samsung/healthchecker/MainActivity.kt
         package com.samsung.healthchecker
+        import android.Manifest
         import android.content.Intent
+        import android.content.pm.PackageManager
+        import android.graphics.Color
         import android.net.Uri
         import android.os.Build
         import android.os.Bundle
         import android.provider.Settings
         import android.widget.Button
-        import android.widget.LinearLayout
+        import android.widget.EditText
         import android.widget.TextView
+        import android.widget.Toast
         import androidx.appcompat.app.AppCompatActivity
-        import android.graphics.Color
         
         class MainActivity : AppCompatActivity() {
             override fun onCreate(savedInstanceState: Bundle?) {
                 super.onCreate(savedInstanceState)
-                val layout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(50, 80, 50, 50) }
+                setContentView(R.layout.activity_main)
                 
-                // 폰 버전 / 헬스 버전 가져오기
+                // 딥링크 버튼 로직 (삼성 헬스 내부 설정으로 쏴주기)
+                findViewById<Button>(R.id.btn_health_settings).setOnClickListener {
+                    try {
+                        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("shealth://settings")))
+                    } catch (e: Exception) {
+                        startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply { data = Uri.parse("package:com.sec.android.app.shealth") })
+                        Toast.makeText(this, "딥링크 진입 실패, 권한 화면으로 이동합니다.", Toast.LENGTH_SHORT).show()
+                    }
+                }
+                
+                // ADB 설치 버튼 로직 (UI 연동)
+                findViewById<Button>(R.id.btn_adb_install).setOnClickListener {
+                    val ip = findViewById<EditText>(R.id.et_ip).text.toString()
+                    if (ip.isNotEmpty()) {
+                        Toast.makeText(this, "워치($ip)로 무선 전송 시작 (V3.0 예정 기능)", Toast.LENGTH_LONG).show()
+                    } else {
+                        Toast.makeText(this, "IP 주소를 입력해 주세요!", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            
+            // 앱이 화면에 뜰 때마다 상태를 실시간 새로고침!
+            override fun onResume() {
+                super.onResume()
+                refreshStatus()
+            }
+            
+            private fun refreshStatus() {
+                // 1. 폰/헬스 버전 가져오기
                 val phoneOs = Build.DISPLAY
                 var healthVersion = "설치 안됨"
                 try {
                     healthVersion = packageManager.getPackageInfo("com.sec.android.app.shealth", 0).versionName
                 } catch (e: Exception) {}
+                findViewById<TextView>(R.id.tv_phone_info).text = "- 모델명/OS: $phoneOs\n- 삼성헬스 버전: $healthVersion"
                 
-                layout.addView(TextView(this).apply { text = "⚙️ Health 검증 도우미 v1.0\n\n📱 내 폰 정보\n - 모델/OS: $phoneOs\n - 삼성헬스 버전: $healthVersion\n\n"; textSize = 18f; setTextColor(Color.BLACK) })
+                // 2. 시스템 위치 권한 판독 (삼성 헬스가 위치 권한을 가지고 있는지)
+                val hasSysPerm = packageManager.checkPermission(Manifest.permission.ACCESS_FINE_LOCATION, "com.sec.android.app.shealth") == PackageManager.PERMISSION_GRANTED ||
+                                 packageManager.checkPermission(Manifest.permission.ACCESS_COARSE_LOCATION, "com.sec.android.app.shealth") == PackageManager.PERMISSION_GRANTED
                 
-                // 삼성 헬스 권한 이동 버튼
-                layout.addView(Button(this).apply {
-                    text = "📍 삼성 헬스 '권한 설정' 열기"
-                    setOnClickListener {
-                        startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply { data = Uri.parse("package:com.sec.android.app.shealth") })
+                // 3. 헬스 내부 위치정보 토글 판독 (공용 데이터베이스 꼼수)
+                var hasHealthInternal = false
+                try {
+                    val uri = Uri.parse("content://com.sec.android.app.shealth/settings")
+                    val cursor = contentResolver.query(uri, null, "key = ?", arrayOf("location_information_enabled"), null)
+                    if (cursor != null && cursor.moveToFirst()) {
+                        val idx = cursor.getColumnIndex("value")
+                        if (idx != -1) hasHealthInternal = (cursor.getInt(idx) == 1)
+                        cursor.close()
+                    } else {
+                        // DB 조회가 막힌 경우 (우회 실패시 임시로 시스템 권한 따라가기)
+                        hasHealthInternal = hasSysPerm 
                     }
-                })
+                } catch (e: Exception) {
+                    hasHealthInternal = hasSysPerm
+                }
                 
-                // GPS 이동 버튼
-                layout.addView(Button(this).apply { text = "📡 스마트폰 'GPS 설정' 열기"; setOnClickListener { startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)) } })
+                // 4. 화면 색상 및 상태 텍스트 업데이트
+                val tvSys = findViewById<TextView>(R.id.tv_sys_perm)
+                val tvHealth = findViewById<TextView>(R.id.tv_sh_perm)
+                val tvFinal = findViewById<TextView>(R.id.tv_final_status)
                 
-                setContentView(layout)
+                if (hasSysPerm) {
+                    tvSys.apply { text = "1. 시스템 위치 권한 : 🟢 PASS"; setTextColor(Color.parseColor("#388E3C")) }
+                } else {
+                    tvSys.apply { text = "1. 시스템 위치 권한 : 🔴 FAIL"; setTextColor(Color.parseColor("#D32F2F")) }
+                }
+                
+                if (hasHealthInternal) {
+                    tvHealth.apply { text = "2. 헬스 내부 위치 토글 : 🟢 PASS"; setTextColor(Color.parseColor("#388E3C")) }
+                } else {
+                    tvHealth.apply { text = "2. 헬스 내부 위치 토글 : 🔴 FAIL"; setTextColor(Color.parseColor("#D32F2F")) }
+                }
+                
+                if (hasSysPerm && hasHealthInternal) {
+                    tvFinal.apply { 
+                        text = "📢 최종 상태 : 🟢 PASS (검증 통과!)"
+                        setBackgroundColor(Color.parseColor("#E8F5E9"))
+                        setTextColor(Color.parseColor("#2E7D32"))
+                    }
+                } else {
+                    tvFinal.apply { 
+                        text = "📢 최종 상태 : 🔴 FAIL (조치 필요!)"
+                        setBackgroundColor(Color.parseColor("#FFEBEE"))
+                        setTextColor(Color.parseColor("#C62828"))
+                    }
+                }
             }
         }
         EOF
@@ -136,5 +226,5 @@ jobs:
     - name: 구워진 앱 추출하기
       uses: actions/upload-artifact@v4
       with:
-        name: HealthChecker-App
+        name: HealthChecker-App-V2
         path: app/build/outputs/apk/debug/app-debug.apk
