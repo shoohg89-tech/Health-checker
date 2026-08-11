@@ -24,7 +24,12 @@ jobs:
       run: |
         mkdir -p app/src/main/java/com/samsung/healthchecker
         
-        # 1. 설정 파일 생성 (최신 문법 적용)
+        # 1. 설정 파일 생성 (AndroidX 활성화 추가!)
+        cat << 'EOF' > gradle.properties
+        android.useAndroidX=true
+        android.enableJetifier=true
+        EOF
+
         cat << 'EOF' > settings.gradle
         pluginManagement {
             repositories { google(); mavenCentral(); gradlePluginPortal() }
