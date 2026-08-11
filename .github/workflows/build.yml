@@ -1,4 +1,4 @@
-name: Build Health Checker App V3.3
+name: Build Health Checker App V3.4
 
 on:
   push:
@@ -52,7 +52,7 @@ jobs:
         android {
             namespace 'com.samsung.healthchecker'
             compileSdk 34
-            defaultConfig { applicationId "com.samsung.healthchecker"; minSdk 24; targetSdk 34; versionCode 7; versionName "3.3" }
+            defaultConfig { applicationId "com.samsung.healthchecker"; minSdk 24; targetSdk 34; versionCode 8; versionName "3.4" }
             signingConfigs { debugKeystore { storeFile file("../debug.keystore"); storePassword "android"; keyAlias "androiddebugkey"; keyPassword "android" } }
             buildTypes { debug { signingConfig signingConfigs.debugKeystore } }
             compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
@@ -61,7 +61,6 @@ jobs:
         dependencies {
             implementation 'androidx.appcompat:appcompat:1.6.1'
             implementation 'com.google.android.material:material:1.9.0'
-            // 💡 문제의 AdbLib 부품 요청 코드를 삭제했습니다! 
         }
         EOF
 
@@ -87,4 +86,14 @@ jobs:
         <manifest xmlns:android="http://schemas.android.com/apk/res/android"><uses-permission android:name="android.permission.INTERNET" /><queries><package android:name="com.sec.android.app.shealth" /></queries><application android:label="Health 검증앱" android:theme="@style/Theme.MaterialComponents.Light.NoActionBar"><activity android:name="com.samsung.healthchecker.MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter></activity></application></manifest>
         EOF
 
-        cat << 'EOF' > app/src/main/res/layout/activity
+        cat << 'EOF' > app/src/main/res/layout/activity_main.xml
+        <?xml version="1.0" encoding="utf-8"?>
+        <ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#F4F7F9">
+            <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="16dp">
+                <TextView android:text="⚙️ Health 검증 도우미 v3.4" android:textSize="22sp" android:textStyle="bold" android:textColor="#0054A6" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp" android:gravity="center"/>
+                <LinearLayout android:orientation="vertical" android:background="#FFFFFF" android:elevation="4dp" android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp">
+                    <TextView android:text="📱 내 폰 정보" android:textSize="18sp" android:textStyle="bold" android:textColor="#0054A6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="8dp"/>
+                    <TextView android:id="@+id/tv_phone_info" android:text="불러오는 중..." android:textColor="#333333" android:textSize="14sp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+                </LinearLayout>
+                <LinearLayout android:orientation="vertical" android:background="#FFFFFF" android:elevation="4dp" android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp">
+                    <TextView android:text="🔍 실시간 자동 검증 결과" android:textSize="18sp" android:textStyle="b
