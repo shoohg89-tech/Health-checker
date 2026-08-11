@@ -20,19 +20,18 @@ jobs:
       with:
         gradle-version: '8.4'
 
-    - name: 앱 코드 자동 생성 (V2.1 고정 서명키 반영)
+    - name: 앱 코드 자동 생성 (V2.2 안전 장치 강화)
       run: |
         mkdir -p app/src/main/java/com/samsung/healthchecker
         mkdir -p app/src/main/res/layout
         mkdir -p app/src/main/res/values
         
-        # 1. 깃허브 빌드 공장 전용 '고정 서명 키' 강제 생성 (업데이트 가능의 핵심!)
-        # 이 서명 키를 고정해두면 앞으로 지우지 않고 무한 업데이트가 가능해집니다.
+        # 1. 고정 서명 키 생성
         keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey \
           -keypass android -keyalg RSA -keysize 2048 -validity 10000 \
           -dname "CN=Android Debug,O=Android,C=US"
 
-        # 2. 설정 파일 생성 (AndroidX 활성화)
+        # 2. 설정 파일 생성
         cat << 'EOF' > gradle.properties
         android.useAndroidX=true
         android.enableJetifier=true
@@ -49,14 +48,12 @@ jobs:
         plugins { id 'com.android.application' version '8.1.1' apply false; id 'org.jetbrains.kotlin.android' version '1.9.0' apply false }
         EOF
         
-        # 고정된 서명키(debug.keystore)를 앱 빌드 과정에 연결해주는 핵심 설정 추가
         cat << 'EOF' > app/build.gradle
         plugins { id 'com.android.application'; id 'org.jetbrains.kotlin.android' }
         android {
             namespace 'com.samsung.healthchecker'
             compileSdk 34
-            defaultConfig { applicationId "com.samsung.healthchecker"; minSdk 24; targetSdk 34; versionCode 2; versionName "2.0" }
-            
+            defaultConfig { applicationId "com.samsung.healthchecker"; minSdk 24; targetSdk 34; versionCode 3; versionName "2.2" }
             signingConfigs {
                 debugKeystore {
                     storeFile file("../debug.keystore")
@@ -65,16 +62,10 @@ jobs:
                     keyPassword "android"
                 }
             }
-            
             buildTypes {
-                debug {
-                    signingConfig signingConfigs.debugKeystore
-                }
-                release {
-                    signingConfig signingConfigs.debugKeystore
-                }
+                debug { signingConfig signingConfigs.debugKeystore }
+                release { signingConfig signingConfigs.debugKeystore }
             }
-            
             compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
             kotlinOptions { jvmTarget = '17' }
         }
@@ -84,7 +75,7 @@ jobs:
         }
         EOF
         
-        # 3. 안드로이드 시스템 권한 및 쿼리 세팅
+        # 3. 시스템 권한 파일
         cat << 'EOF' > app/src/main/AndroidManifest.xml
         <?xml version="1.0" encoding="utf-8"?>
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -100,21 +91,18 @@ jobs:
         </manifest>
         EOF
         
-        # 4. 고급 카드형 UI 레이아웃 화면 (XML)
+        # 4. 레이아웃
         cat << 'EOF' > app/src/main/res/layout/activity_main.xml
         <?xml version="1.0" encoding="utf-8"?>
         <ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#F4F7F9">
             <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="16dp">
-                <!-- 타이틀 -->
-                <TextView android:text="⚙️ Health 검증 도우미 v2.0" android:textSize="22sp" android:textStyle="bold" android:textColor="#0054A6" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp" android:gravity="center"/>
+                <TextView android:text="⚙️ Health 검증 도우미 v2.2" android:textSize="22sp" android:textStyle="bold" android:textColor="#0054A6" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp" android:gravity="center"/>
                 
-                <!-- 폰 정보 카드 -->
                 <LinearLayout android:orientation="vertical" android:background="#FFFFFF" android:elevation="4dp" android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp">
                     <TextView android:text="📱 내 폰 정보" android:textSize="18sp" android:textStyle="bold" android:textColor="#0054A6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="8dp"/>
                     <TextView android:id="@+id/tv_phone_info" android:text="불러오는 중..." android:textColor="#333333" android:textSize="14sp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
                 </LinearLayout>
                 
-                <!-- 실시간 검증 결과 카드 -->
                 <LinearLayout android:orientation="vertical" android:background="#FFFFFF" android:elevation="4dp" android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp">
                     <TextView android:text="🔍 실시간 자동 검증 결과" android:textSize="18sp" android:textStyle="bold" android:textColor="#0054A6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="8dp"/>
                     <TextView android:id="@+id/tv_sys_perm" android:text="1. 시스템 위치 권한 : ⏳ 대기중" android:textSize="15sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="6dp"/>
@@ -123,7 +111,6 @@ jobs:
                     <Button android:id="@+id/btn_health_settings" android:text="📍 헬스 '위치 정보' 토글 확인하기 ↗" android:backgroundTint="#0054A6" android:textColor="#FFFFFF" android:layout_width="match_parent" android:layout_height="wrap_content"/>
                 </LinearLayout>
                 
-                <!-- 워치 무선 설치 카드 -->
                 <LinearLayout android:orientation="vertical" android:background="#FFFFFF" android:elevation="4dp" android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content">
                     <TextView android:text="⌚ 워치 도우미 앱 무선 설치" android:textSize="18sp" android:textStyle="bold" android:textColor="#0054A6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="8dp"/>
                     <EditText android:id="@+id/et_ip" android:hint="워치 IP 주소 입력 (예: 192.168.0.15)" android:inputType="textUri" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="8dp"/>
@@ -133,7 +120,7 @@ jobs:
         </ScrollView>
         EOF
         
-        # 5. 메인 화면 동작 코드
+        # 5. 동작 코드 (안전 코드 적용)
         cat << 'EOF' > app/src/main/java/com/samsung/healthchecker/MainActivity.kt
         package com.samsung.healthchecker
         import android.Manifest
@@ -160,7 +147,7 @@ jobs:
                         startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("shealth://settings")))
                     } catch (e: Exception) {
                         startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply { data = Uri.parse("package:com.sec.android.app.shealth") })
-                        Toast.makeText(this, "딥링크 진입 실패, 권한 화면으로 이동합니다.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "설정 화면으로 이동합니다.", Toast.LENGTH_SHORT).show()
                     }
                 }
                 
@@ -190,19 +177,20 @@ jobs:
                 val hasSysPerm = packageManager.checkPermission(Manifest.permission.ACCESS_FINE_LOCATION, "com.sec.android.app.shealth") == PackageManager.PERMISSION_GRANTED ||
                                  packageManager.checkPermission(Manifest.permission.ACCESS_COARSE_LOCATION, "com.sec.android.app.shealth") == PackageManager.PERMISSION_GRANTED
                 
-                var hasHealthInternal = false
+                // 0: FAIL, 1: PASS, 2: 직접 확인 필요(우회 막힘)
+                var healthInternalStatus = 2 
                 try {
                     val uri = Uri.parse("content://com.sec.android.app.shealth/settings")
                     val cursor = contentResolver.query(uri, null, "key = ?", arrayOf("location_information_enabled"), null)
                     if (cursor != null && cursor.moveToFirst()) {
                         val idx = cursor.getColumnIndex("value")
-                        if (idx != -1) hasHealthInternal = (cursor.getInt(idx) == 1)
+                        if (idx != -1) {
+                            healthInternalStatus = if (cursor.getInt(idx) == 1) 1 else 0
+                        }
                         cursor.close()
-                    } else {
-                        hasHealthInternal = hasSysPerm 
                     }
                 } catch (e: Exception) {
-                    hasHealthInternal = hasSysPerm
+                    healthInternalStatus = 2
                 }
                 
                 val tvSys = findViewById<TextView>(R.id.tv_sys_perm)
@@ -215,23 +203,29 @@ jobs:
                     tvSys.apply { text = "1. 시스템 위치 권한 : 🔴 FAIL"; setTextColor(Color.parseColor("#D32F2F")) }
                 }
                 
-                if (hasHealthInternal) {
-                    tvHealth.apply { text = "2. 헬스 내부 위치 토글 : 🟢 PASS"; setTextColor(Color.parseColor("#388E3C")) }
-                } else {
-                    tvHealth.apply { text = "2. 헬스 내부 위치 토글 : 🔴 FAIL"; setTextColor(Color.parseColor("#D32F2F")) }
+                when (healthInternalStatus) {
+                    1 -> tvHealth.apply { text = "2. 헬스 설정 위치 정보 : 🟢 PASS"; setTextColor(Color.parseColor("#388E3C")) }
+                    0 -> tvHealth.apply { text = "2. 헬스 설정 위치 정보 : 🔴 FAIL"; setTextColor(Color.parseColor("#D32F2F")) }
+                    else -> tvHealth.apply { text = "2. 헬스 설정 위치 정보 : ⚠️ 직접 확인 필요"; setTextColor(Color.parseColor("#F57C00")) }
                 }
                 
-                if (hasSysPerm && hasHealthInternal) {
+                if (hasSysPerm && healthInternalStatus == 1) {
                     tvFinal.apply { 
                         text = "📢 최종 상태 : 🟢 PASS (검증 통과!)"
                         setBackgroundColor(Color.parseColor("#E8F5E9"))
                         setTextColor(Color.parseColor("#2E7D32"))
                     }
-                } else {
+                } else if (!hasSysPerm || healthInternalStatus == 0) {
                     tvFinal.apply { 
                         text = "📢 최종 상태 : 🔴 FAIL (조치 필요!)"
                         setBackgroundColor(Color.parseColor("#FFEBEE"))
                         setTextColor(Color.parseColor("#C62828"))
+                    }
+                } else {
+                    tvFinal.apply { 
+                        text = "📢 최종 상태 : ⚠️ 직접 확인 필요 (보류)"
+                        setBackgroundColor(Color.parseColor("#FFF3E0"))
+                        setTextColor(Color.parseColor("#E65100"))
                     }
                 }
             }
