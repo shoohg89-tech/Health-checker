@@ -1,4 +1,4 @@
-name: Build Health Checker App V3.6 (Phone + Watch UI fix)
+name: Build Health Checker App V3.7 (UI fix & Download Guarantee)
 
 on:
   push:
@@ -52,7 +52,7 @@ jobs:
         android {
             namespace 'com.samsung.healthchecker'
             compileSdk 34
-            defaultConfig { applicationId "com.samsung.healthchecker"; minSdk 24; targetSdk 34; versionCode 10; versionName "3.6" }
+            defaultConfig { applicationId "com.samsung.healthchecker"; minSdk 24; targetSdk 34; versionCode 11; versionName "3.7" }
             signingConfigs { debugKeystore { storeFile file("../debug.keystore"); storePassword "android"; keyAlias "androiddebugkey"; keyPassword "android" } }
             buildTypes { debug { signingConfig signingConfigs.debugKeystore } }
             compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
@@ -64,7 +64,6 @@ jobs:
         }
         EOF
 
-        # 💡 [워치용 build.gradle]을 모바일 표준에 맞춰 일반 애플리케이션 빌더로 수정
         cat << 'EOF' > wear/build.gradle
         plugins { id 'com.android.application'; id 'org.jetbrains.kotlin.android' }
         android {
@@ -78,11 +77,9 @@ jobs:
         }
         dependencies { 
             implementation 'androidx.core:core-ktx:1.9.0' 
-            implementation 'androidx.percentlayout:percentlayout:1.0.1'
         }
         EOF
 
-        # 💡 [핵심 해결책] 워치 앱 AndroidManifest에 런처 아이콘 선언문을 심었습니다!
         cat << 'EOF' > wear/src/main/AndroidManifest.xml
         <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.samsung.healthchecker.wear">
             <uses-feature android:name="android.hardware.type.watch" />
@@ -97,7 +94,6 @@ jobs:
         </manifest>
         EOF
 
-        # 워치 화면에 나타날 심플한 텍스트 레이아웃 추가
         cat << 'EOF' > wear/src/main/res/layout/activity_main.xml
         <?xml version="1.0" encoding="utf-8"?>
         <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:gravity="center" android:background="#000000">
@@ -126,66 +122,8 @@ jobs:
         <?xml version="1.0" encoding="utf-8"?>
         <ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#F4F7F9">
             <LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="16dp">
-                <TextView android:text="⚙️ Health 검증 도우미 v3.6" android:textSize="22sp" android:textStyle="bold" android:textColor="#0054A6" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp" android:gravity="center"/>
+                <TextView android:text="⚙️ Health 검증 도우미 v3.7" android:textSize="22sp" android:textStyle="bold" android:textColor="#0054A6" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp" android:gravity="center"/>
                 <LinearLayout android:orientation="vertical" android:background="#FFFFFF" android:elevation="4dp" android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp">
                     <TextView android:text="📱 내 폰 정보" android:textSize="18sp" android:textStyle="bold" android:textColor="#0054A6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="8dp"/>
                     <TextView android:id="@+id/tv_phone_info" android:text="불러오는 중..." android:textColor="#333333" android:textSize="14sp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
                 </LinearLayout>
-                <LinearLayout android:orientation="vertical" android:background="#FFFFFF" android:elevation="4dp" android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp">
-                    <TextView android:text="🔍 실시간 자동 검증 결과" android:textSize="18sp" android:textStyle="bold" android:textColor="#0054A6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="8dp"/>
-                    <TextView android:id="@+id/tv_sys_perm" android:text="1. 시스템 위치 권한 : ⏳ 대기중" android:textSize="15sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="6dp"/>
-                    <TextView android:id="@+id/tv_sh_perm" android:text="2. 헬스 설정 위치 정보 : ⏳ 대기중" android:textSize="15sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="16dp"/>
-                    <TextView android:id="@+id/tv_final_status" android:text="📢 상태 분석중..." android:textSize="18sp" android:textStyle="bold" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="12dp" android:gravity="center" android:padding="8dp"/>
-                    <Button android:id="@+id/btn_health_settings" android:text="📍 헬스 '위치 정보' 토글 확인하기 ↗" android:backgroundTint="#0054A6" android:textColor="#FFFFFF" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                </LinearLayout>
-                <LinearLayout android:orientation="vertical" android:background="#FFFFFF" android:elevation="4dp" android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content">
-                    <TextView android:text="⌚ 워치 무선 세팅 (V3.6)" android:textSize="18sp" android:textStyle="bold" android:textColor="#0054A6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="8dp"/>
-                    <EditText android:id="@+id/et_ip" android:hint="IP:포트 입력 (예: 192.168.0.15:5555)" android:inputType="textUri" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="8dp"/>
-                    <TextView android:id="@+id/tv_adb_status" android:text="상태: 대기 중" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:layout_marginBottom="8dp" />
-                    <Button android:id="@+id/btn_adb_install" android:text="📡 워치에 짝꿍 앱 무선 설치" android:backgroundTint="#0054A6" android:textColor="#FFFFFF" android:layout_width="match_parent" android:layout_height="wrap_content"/>
-                </LinearLayout>
-            </LinearLayout>
-        </ScrollView>
-        EOF
-
-        cat << 'EOF' > app/src/main/java/com/samsung/healthchecker/MainActivity.kt
-        package com.samsung.healthchecker
-        import android.Manifest
-        import android.content.Intent
-        import android.content.pm.PackageManager
-        import android.graphics.Color
-        import android.net.Uri
-        import android.os.Build
-        import android.os.Bundle
-        import android.os.Handler
-        import android.os.Looper
-        import android.provider.Settings
-        import android.widget.Button
-        import android.widget.EditText
-        import android.widget.TextView
-        import androidx.appcompat.app.AppCompatActivity
-        import kotlin.concurrent.thread
-
-        class MainActivity : AppCompatActivity() {
-            private lateinit var adbStatusTextView: TextView
-            private lateinit var adbButton: Button
-
-            override fun onCreate(savedInstanceState: Bundle?) {
-                super.onCreate(savedInstanceState)
-                setContentView(R.layout.activity_main)
-
-                adbStatusTextView = findViewById(R.id.tv_adb_status)
-                adbButton = findViewById(R.id.btn_adb_install)
-
-                findViewById<Button>(R.id.btn_health_settings).setOnClickListener {
-                    try { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("shealth://settings"))) } 
-                    catch (e: Exception) { startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply { data = Uri.parse("package:com.sec.android.app.shealth") }) }
-                }
-                
-                adbButton.setOnClickListener {
-                    val ipText = findViewById<EditText>(R.id.et_ip).text.toString()
-                    if (ipText.contains(":")) {
-                        installWatchApp()
-                    } else {
-                        updateStatus("IP와 포트 번호를 정확히 입력해주세요.", true)
-                    }
