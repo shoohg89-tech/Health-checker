@@ -1,4 +1,4 @@
-name: Build Health Checker App V4.0 (Ultimate CCTV)
+name: Build Health Checker App V4.1 (Wear Activity Fix)
 
 on:
   push:
@@ -51,7 +51,7 @@ jobs:
         android {
             namespace 'com.samsung.healthchecker'
             compileSdk 34
-            defaultConfig { applicationId "com.samsung.healthchecker"; minSdk 24; targetSdk 34; versionCode 14; versionName "4.0" }
+            defaultConfig { applicationId "com.samsung.healthchecker"; minSdk 24; targetSdk 34; versionCode 15; versionName "4.1" }
             signingConfigs { debugKeystore { storeFile file("../debug.keystore"); storePassword "android"; keyAlias "androiddebugkey"; keyPassword "android" } }
             buildTypes { debug { signingConfig signingConfigs.debugKeystore } }
             compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
@@ -98,11 +98,12 @@ jobs:
         </LinearLayout>
         EOF
 
+        # 💡 [핵심 수정] 워치 앱 동작 코드를 가벼운 'Activity'로 변경했습니다!
         cat << 'EOF' > wear/src/main/java/com/samsung/healthchecker/wear/MainActivity.kt
         package com.samsung.healthchecker.wear
+        import android.app.Activity
         import android.os.Bundle
-        import androidx.appcompat.app.AppCompatActivity
-        class MainActivity : AppCompatActivity() {
+        class MainActivity : Activity() {
             override fun onCreate(savedInstanceState: Bundle?) {
                 super.onCreate(savedInstanceState)
                 setContentView(R.layout.activity_main)
@@ -115,7 +116,7 @@ jobs:
         EOF
 
         cat << 'EOF' > app/src/main/res/layout/activity_main.xml
-        <?xml version="1.0" encoding="utf-8"?><ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#F4F7F9"><LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="16dp"><TextView android:text="⚙️ Health 검증 도우미 v4.0" android:textSize="22sp" android:textStyle="bold" android:textColor="#0054A6" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp" android:gravity="center"/><LinearLayout android:orientation="vertical" android:background="#FFFFFF" android:elevation="4dp" android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp"><TextView android:text="📱 내 폰 정보" android:textSize="18sp" android:textStyle="bold" android:textColor="#0054A6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="8dp"/><TextView android:id="@+id/tv_phone_info" android:text="불러오는 중..." android:textColor="#333333" android:textSize="14sp" android:layout_width="wrap_content" android:layout_height="wrap_content"/></LinearLayout><LinearLayout android:orientation="vertical" android:background="#FFFFFF" android:elevation="4dp" android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp"><TextView android:text="🔍 실시간 자동 검증 결과" android:textSize="18sp" android:textStyle="bold" android:textColor="#0054A6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="8dp"/><TextView android:id="@+id/tv_sys_perm" android:text="1. 시스템 위치 권한 : ⏳ 대기중" android:textSize="15sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="6dp"/><TextView android:id="@+id/tv_sh_perm" android:text="2. 헬스 설정 위치 정보 : ⏳ 대기중" android:textSize="15sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="16dp"/><TextView android:id="@+id/tv_final_status" android:text="📢 상태 분석중..." android:textSize="18sp" android:textStyle="bold" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="12dp" android:gravity="center" android:padding="8dp"/><Button android:id="@+id/btn_health_settings" android:text="📍 헬스 '위치 정보' 토글 확인하기 ↗" android:backgroundTint="#0054A6" android:textColor="#FFFFFF" android:layout_width="match_parent" android:layout_height="wrap_content"/></LinearLayout><LinearLayout android:orientation="vertical" android:background="#FFFFFF" android:elevation="4dp" android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content"><TextView android:text="⌚ 워치 무선 세팅 (V4.0)" android:textSize="18sp" android:textStyle="bold" android:textColor="#0054A6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="8dp"/><EditText android:id="@+id/et_ip" android:hint="IP:포트 입력 (예: 192.168.0.15:5555)" android:inputType="textUri" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="8dp"/><TextView android:id="@+id/tv_adb_status" android:text="상태: 대기 중" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:layout_marginBottom="8dp" /><Button android:id="@+id/btn_adb_install" android:text="📡 워치에 짝꿍 앱 무선 설치" android:backgroundTint="#0054A6" android:textColor="#FFFFFF" android:layout_width="match_parent" android:layout_height="wrap_content"/></LinearLayout></LinearLayout></ScrollView>
+        <?xml version="1.0" encoding="utf-8"?><ScrollView xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#F4F7F9"><LinearLayout android:orientation="vertical" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="16dp"><TextView android:text="⚙️ Health 검증 도우미 v4.1" android:textSize="22sp" android:textStyle="bold" android:textColor="#0054A6" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp" android:gravity="center"/><LinearLayout android:orientation="vertical" android:background="#FFFFFF" android:elevation="4dp" android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp"><TextView android:text="📱 내 폰 정보" android:textSize="18sp" android:textStyle="bold" android:textColor="#0054A6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="8dp"/><TextView android:id="@+id/tv_phone_info" android:text="불러오는 중..." android:textColor="#333333" android:textSize="14sp" android:layout_width="wrap_content" android:layout_height="wrap_content"/></LinearLayout><LinearLayout android:orientation="vertical" android:background="#FFFFFF" android:elevation="4dp" android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="16dp"><TextView android:text="🔍 실시간 자동 검증 결과" android:textSize="18sp" android:textStyle="bold" android:textColor="#0054A6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="8dp"/><TextView android:id="@+id/tv_sys_perm" android:text="1. 시스템 위치 권한 : ⏳ 대기중" android:textSize="15sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="6dp"/><TextView android:id="@+id/tv_sh_perm" android:text="2. 헬스 설정 위치 정보 : ⏳ 대기중" android:textSize="15sp" android:textStyle="bold" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="16dp"/><TextView android:id="@+id/tv_final_status" android:text="📢 상태 분석중..." android:textSize="18sp" android:textStyle="bold" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="12dp" android:gravity="center" android:padding="8dp"/><Button android:id="@+id/btn_health_settings" android:text="📍 헬스 '위치 정보' 토글 확인하기 ↗" android:backgroundTint="#0054A6" android:textColor="#FFFFFF" android:layout_width="match_parent" android:layout_height="wrap_content"/></LinearLayout><LinearLayout android:orientation="vertical" android:background="#FFFFFF" android:elevation="4dp" android:padding="16dp" android:layout_width="match_parent" android:layout_height="wrap_content"><TextView android:text="⌚ 워치 무선 세팅 (V4.1)" android:textSize="18sp" android:textStyle="bold" android:textColor="#0054A6" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginBottom="8dp"/><EditText android:id="@+id/et_ip" android:hint="IP:포트 입력 (예: 192.168.0.15:5555)" android:inputType="textUri" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="8dp"/><TextView android:id="@+id/tv_adb_status" android:text="상태: 대기 중" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:layout_marginBottom="8dp" /><Button android:id="@+id/btn_adb_install" android:text="📡 워치에 짝꿍 앱 무선 설치" android:backgroundTint="#0054A6" android:textColor="#FFFFFF" android:layout_width="match_parent" android:layout_height="wrap_content"/></LinearLayout></LinearLayout></ScrollView>
         EOF
 
         cat << 'EOF' > app/src/main/java/com/samsung/healthchecker/MainActivity.kt
@@ -170,7 +171,7 @@ jobs:
                         Thread.sleep(1500)
                         updateStatus("연결 성공! APK 파일 전송 중... 50%", false)
                         Thread.sleep(2000)
-                        updateStatus("워치에 설치 완료! (V4.0 테스트 성공)", true)
+                        updateStatus("워치에 설치 완료! (V4.1 테스트 성공)", true)
                     } catch (e: Exception) {
                         updateStatus("연결 실패: ${e.message}", true)
                     }
@@ -227,25 +228,19 @@ jobs:
         
         mkdir -p FINAL_APK_BOX
         
-        # 모든 apk 파일을 찾아서 FINAL_APK_BOX로 복사
         find . -name "*.apk" -type f -exec cp {} FINAL_APK_BOX/ \;
         
-        # 박스 안의 내용물 확인
         APK_COUNT=$(ls -1 FINAL_APK_BOX/*.apk 2>/dev/null | wc -l)
         
         if [ "$APK_COUNT" -eq 0 ]; then
-          echo "❌ [치명적 오류] 기계가 앱을 만들지 못했습니다! (APK 파일 0개)"
-          echo "폴더 전체 구조는 다음과 같습니다:"
-          ls -laR
+          echo "❌ [치명적 오류] 앱을 찾을 수 없습니다."
           exit 1
         else
-          echo "✅ [성공] 앱이 정상적으로 만들어졌습니다! 발견된 파일 수: $APK_COUNT 개"
-          ls -la FINAL_APK_BOX/
+          echo "✅ 발견된 파일 수: $APK_COUNT 개"
         fi
-        echo "========================================================="
 
     - name: 최종 결과물 추출 (안전 박스 통째로 배송)
       uses: actions/upload-artifact@v4
       with:
-        name: HealthChecker-App-V4.0
+        name: HealthChecker-App-V4.1
         path: FINAL_APK_BOX/
